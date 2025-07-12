@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Quét QR / Barcode (camera sau)</title>
+  <title>Quét QR / Barcode (có đổi camera)</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body {
@@ -27,12 +27,16 @@
       width: 80%;
       max-width: 400px;
     }
+    #cameraSelect {
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
 
-  <h2>📷 Quét mã QR / Barcode (Camera sau)</h2>
+  <h2>📷 Quét mã QR / Barcode</h2>
   <div id="reader"></div>
+  <button id="switchCameraBtn">🔄 Đổi camera</button>
   <div id="result">Đang chờ quét mã...</div>
 
   <h2>📝 Nhập mã thủ công</h2>
@@ -41,12 +45,15 @@
 
   <script>
     const resultContainer = document.getElementById('result');
+    const switchBtn = document.getElementById('switchCameraBtn');
+    const html5Qr = new Html5Qrcode("reader");
+
+    let cameras = [];
+    let currentCameraIndex = 0;
 
     function onScanSuccess(decodedText) {
       resultContainer.innerText = "✅ Mã quét được: " + decodedText;
-      html5QrcodeScanner.stop().then(() => {
-        console.log("Đã dừng camera sau khi quét.");
-      });
+      html5Qr.stop(); // Dừng camera sau khi quét xong
     }
 
     function submitManualCode() {
@@ -58,14 +65,11 @@
       }
     }
 
-    const html5QrcodeScanner = new Html5Qrcode("reader");
-
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices && devices.length) {
-        // Ưu tiên camera sau
-        const backCam = devices.find(device => /back|rear|environment/i.test(device.label)) || devices[0];
-        html5QrcodeScanner.start(
-          backCam.id,
+    function startCamera(index) {
+      const cam = cameras[index];
+      html5Qr
+        .start(
+          cam.id,
           {
             fps: 10,
             qrbox: { width: 250, height: 250 },
@@ -76,15 +80,28 @@
             ]
           },
           onScanSuccess,
-          error => {
-            // Lỗi quét, không cần hiển thị mỗi lần
-          }
-        );
-      } else {
-        resultContainer.innerText = "❌ Không tìm thấy camera nào.";
+          error => {} // lỗi quét, bỏ qua
+        )
+        .catch(err => {
+          resultContainer.innerText = "❌ Không thể mở camera: " + err;
+        });
+    }
+
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices.length === 0) {
+        resultContainer.innerText = "❌ Không tìm thấy camera nào!";
+        return;
       }
-    }).catch(err => {
-      resultContainer.innerText = "❌ Lỗi khi lấy danh sách camera: " + err;
+
+      cameras = devices;
+      startCamera(currentCameraIndex);
+
+      switchBtn.onclick = () => {
+        html5Qr.stop().then(() => {
+          currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+          startCamera(currentCameraIndex);
+        });
+      };
     });
   </script>
 
