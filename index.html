@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Quét QR / Barcode bằng Camera Sau</title>
+  <title>Quét QR / Barcode (camera sau)</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body {
@@ -31,7 +31,7 @@
 </head>
 <body>
 
-  <h2>📷 Quét mã QR / Barcode</h2>
+  <h2>📷 Quét mã QR / Barcode (Camera sau)</h2>
   <div id="reader"></div>
   <div id="result">Đang chờ quét mã...</div>
 
@@ -44,7 +44,9 @@
 
     function onScanSuccess(decodedText) {
       resultContainer.innerText = "✅ Mã quét được: " + decodedText;
-      html5QrcodeScanner.clear(); // Dừng quét sau khi thành công
+      html5QrcodeScanner.stop().then(() => {
+        console.log("Đã dừng camera sau khi quét.");
+      });
     }
 
     function submitManualCode() {
@@ -60,19 +62,29 @@
 
     Html5Qrcode.getCameras().then(devices => {
       if (devices && devices.length) {
-        const backCamera = devices.find(device => /back|rear|environment/i.test(device.label)) || devices[0];
+        // Ưu tiên camera sau
+        const backCam = devices.find(device => /back|rear|environment/i.test(device.label)) || devices[0];
         html5QrcodeScanner.start(
-          backCamera.id,
+          backCam.id,
           {
             fps: 10,
             qrbox: { width: 250, height: 250 },
-            formatsToSupport: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.QR_CODE]
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.QR_CODE,
+              Html5QrcodeSupportedFormats.CODE_128,
+              Html5QrcodeSupportedFormats.EAN_13
+            ]
           },
-          onScanSuccess
+          onScanSuccess,
+          error => {
+            // Lỗi quét, không cần hiển thị mỗi lần
+          }
         );
+      } else {
+        resultContainer.innerText = "❌ Không tìm thấy camera nào.";
       }
     }).catch(err => {
-      resultContainer.innerText = "❌ Không tìm thấy camera: " + err;
+      resultContainer.innerText = "❌ Lỗi khi lấy danh sách camera: " + err;
     });
   </script>
 
