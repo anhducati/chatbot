@@ -2,88 +2,72 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quét Mã QR / Barcode</title>
-  <script src="https://unpkg.com/nano-scan@1/dist/nano-scan.umd.min.js"></script>
+  <title>Quét Mã QR / Barcode hoặc Nhập mã</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
-    #reader {
-      width: 100%;
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
       max-width: 600px;
       margin: auto;
-      border: 2px solid #ddd;
-      padding: 10px;
     }
     #result {
       margin-top: 10px;
+      font-weight: bold;
+      color: green;
     }
-    #inputCode {
+    input[type="text"] {
       width: 100%;
       padding: 10px;
+      font-size: 1.1em;
+      margin-top: 10px;
+    }
+    button {
+      padding: 10px;
+      font-size: 1em;
+      margin-top: 10px;
+      width: 100%;
+    }
+    #reader {
+      width: 100%;
       margin-top: 20px;
-      font-size: 16px;
     }
   </style>
 </head>
 <body>
 
-<h2>Quét Mã QR / Barcode hoặc Nhập mã thủ công</h2>
+  <h2>📷 Quét mã QR / Barcode</h2>
+  <div id="reader"></div>
+  <div id="result">Chưa có mã</div>
 
-<!-- Ô nhập mã thủ công -->
-<input type="text" id="inputCode" placeholder="Nhập mã QR/Barcode ở đây" oninput="handleManualInput(event)"/>
+  <h2>📝 Nhập mã thủ công</h2>
+  <input type="text" id="manualInput" placeholder="Nhập mã tại đây...">
+  <button onclick="submitManualCode()">Gửi mã</button>
 
-<!-- Vùng quét mã -->
-<div id="reader"></div>
+  <script>
+    const resultContainer = document.getElementById('result');
 
-<!-- Kết quả quét -->
-<pre id="result"></pre>
-
-<script>
-  let scanner;
-  let zoomLevel = 1;  // Khởi tạo mức zoom
-  const zoomThreshold = 500; // Ngưỡng kích thước mã (tùy chỉnh) để thay đổi zoom
-
-  function handleManualInput(event) {
-    const inputText = event.target.value;
-    if (inputText) {
-      document.getElementById('result').innerText = `Mã nhập: ${inputText}`;
+    function onScanSuccess(decodedText, decodedResult) {
+      resultContainer.innerText = "✅ Mã đã quét: " + decodedText;
     }
-  }
 
-  function adjustZoom(decodedResult) {
-    // Tính toán khoảng cách từ kích thước mã
-    const qrSize = decodedResult.size;  // Kích thước mã QR (hoặc barcode)
-
-    // Điều chỉnh zoom dựa vào kích thước mã
-    if (qrSize < zoomThreshold && zoomLevel > 1) {
-      zoomLevel = Math.max(1, zoomLevel - 0.1);  // Nếu mã gần, giảm zoom
-      scanner.setZoom(zoomLevel);
-    } else if (qrSize >= zoomThreshold && zoomLevel < 2) {
-      zoomLevel = Math.min(2, zoomLevel + 0.1);  // Nếu mã xa, tăng zoom
-      scanner.setZoom(zoomLevel);
+    function onScanFailure(error) {
+      // console.warn(`Quét lỗi: ${error}`);
     }
-  }
 
-  // Tạo scanner và xử lý khi quét thành công
-  function startScanner() {
-    scanner = new NanoScan.default({
-      container: document.getElementById('reader'),
-      resolution: { width: 1080, height: 1080 },
-      fps: 30,
-      zoom: zoomLevel,
-      zxingWASMUrl: 'https://unpkg.com/zxing-wasm@2/dist/full/',
-      onScan: (txt, decodedResult) => {
-        document.getElementById('result').innerText = `Đã quét: ${txt}`;
-        adjustZoom(decodedResult);  // Điều chỉnh zoom tự động
-      },
-      onError: (e) => console.error('Lỗi quét:', e),
-    });
+    const html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 
-    scanner.startScan();
-  }
-
-  // Khởi động scanner khi tải trang
-  startScanner();
-</script>
+    function submitManualCode() {
+      const input = document.getElementById('manualInput').value.trim();
+      if (input) {
+        resultContainer.innerText = "📝 Mã thủ công: " + input;
+      } else {
+        alert("Vui lòng nhập mã.");
+      }
+    }
+  </script>
 
 </body>
 </html>
