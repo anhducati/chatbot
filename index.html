@@ -2,35 +2,30 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Quét Mã QR / Barcode hoặc Nhập mã</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <title>Quét QR / Barcode bằng Camera Sau</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
-      max-width: 600px;
-      margin: auto;
-    }
-    #result {
-      margin-top: 10px;
-      font-weight: bold;
-      color: green;
-    }
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      font-size: 1.1em;
-      margin-top: 10px;
-    }
-    button {
-      padding: 10px;
-      font-size: 1em;
-      margin-top: 10px;
-      width: 100%;
+      text-align: center;
     }
     #reader {
       width: 100%;
+      max-width: 400px;
+      margin: auto;
+    }
+    #result {
       margin-top: 20px;
+      font-size: 1.2em;
+      color: green;
+    }
+    input, button {
+      font-size: 1em;
+      padding: 10px;
+      margin-top: 10px;
+      width: 80%;
+      max-width: 400px;
     }
   </style>
 </head>
@@ -38,7 +33,7 @@
 
   <h2>📷 Quét mã QR / Barcode</h2>
   <div id="reader"></div>
-  <div id="result">Chưa có mã</div>
+  <div id="result">Đang chờ quét mã...</div>
 
   <h2>📝 Nhập mã thủ công</h2>
   <input type="text" id="manualInput" placeholder="Nhập mã tại đây...">
@@ -47,17 +42,10 @@
   <script>
     const resultContainer = document.getElementById('result');
 
-    function onScanSuccess(decodedText, decodedResult) {
-      resultContainer.innerText = "✅ Mã đã quét: " + decodedText;
+    function onScanSuccess(decodedText) {
+      resultContainer.innerText = "✅ Mã quét được: " + decodedText;
+      html5QrcodeScanner.clear(); // Dừng quét sau khi thành công
     }
-
-    function onScanFailure(error) {
-      // console.warn(`Quét lỗi: ${error}`);
-    }
-
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 
     function submitManualCode() {
       const input = document.getElementById('manualInput').value.trim();
@@ -67,6 +55,25 @@
         alert("Vui lòng nhập mã.");
       }
     }
+
+    const html5QrcodeScanner = new Html5Qrcode("reader");
+
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices && devices.length) {
+        const backCamera = devices.find(device => /back|rear|environment/i.test(device.label)) || devices[0];
+        html5QrcodeScanner.start(
+          backCamera.id,
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            formatsToSupport: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.QR_CODE]
+          },
+          onScanSuccess
+        );
+      }
+    }).catch(err => {
+      resultContainer.innerText = "❌ Không tìm thấy camera: " + err;
+    });
   </script>
 
 </body>
