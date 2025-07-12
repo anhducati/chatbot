@@ -72,7 +72,10 @@
           cam.id,
           {
             fps: 10,
-            qrbox: { width: 250, height: 250 },
+            qrbox: false,
+            aspectRatio: 4 / 3,
+            disableFlip: true, // Quan trọng khi quét barcode
+            //qrbox: { width: 250, height: 250 },
             formatsToSupport: [
               Html5QrcodeSupportedFormats.QR_CODE,
               Html5QrcodeSupportedFormats.CODE_128,
